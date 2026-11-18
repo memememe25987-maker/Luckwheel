@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#080d1b">
+<title>Lucky Spin — Spin the Wheel</title>
+<style>
+:root{--bg:#080d1b;--panel:#111a2e;--panel2:#17233b;--text:#f4f7ff;--muted:#9eacc8;--accent:#6ee7ff;--line:#283754}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 
+50% -15%,#1c3561 0%,transparent 55%),linear-gradient(145deg,#080d1b,#10172a 65%,#090e1c);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{text-align:center;padding:28px 16px 12px}
+.logo{display:inline-flex;align-items:center;gap:9px;font-weight:900;letter-spacing:2px;font-size:13px;color:var(--accent)}
+h1{font-size:clamp(30px,6vw,48px);margin:10px 0 5px;letter-spacing:-1.5px}
+.subtitle{margin:0;color:var(--muted);font-size:14px}
+.app{width:min(1100px,
+94vw);margin:22px auto 40px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(290px,.85fr);gap:20px;align-items:start}
+.panel{background:linear-gradient(160deg,rgba(23,35,59,.96),rgba(13,21,39,.96));border:1px solid var(--line);border-radius:23px;box-shadow:0 20px 60px #0005;padding:20px}
+.wheel-panel{display:flex;flex-direction:column;align-items:center;min-width:0}
+.wheel-wrap{position:relative;width:min(100%,520px);aspect-ratio:1;margin:8px auto 16px;filter:drop-shadow(0 18px 25px 
+#0008)}
+canvas{width:100%;height:100%;display:block}
+.pointer{position:absolute;z-index:2;top:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:19px solid transparent;border-right:19px solid transparent;border-top:43px solid #fff;filter:drop-shadow(0 3px 5px #0009)}
+.pointer:after{content:"";position:absolute;left:-8px;top:-42px;border-left:8px solid transparent;border-right:8px solid transparent;border-top:19px solid #ffcf58}
+.spin-btn{border:0;border-radius:999px;padding:16px 
+48px;background:linear-gradient(100deg,#60e7ff,#8c7bff);color:#07101f;font-weight:1000;font-size:18px;letter-spacing:1.5px;cursor:pointer;box-shadow:0 8px 28px #5bdcff45;transition:transform .15s,filter .15s}
+.spin-btn:hover{transform:translateY(-2px);filter:brightness(1.08)}.spin-btn:active{transform:scale(.97)}.spin-btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.result{min-height:30px;text-align:center;margin:13px 0 0;font-size:18px;font-weight:800;color:#ffe28a}
+.side{display:flex;flex-direction:column;gap:16px}
+h2{font-size:16px;margin:0 0 13px;letter-spacing:.2px}
+textarea{width:100%;min-height:190px;resize:vertical;background:#0a1223;border:1px solid #30415f;border-radius:13px;color:var(--text);padding:13px;font:14px/1.7 inherit;outline:none}
+textarea:focus,input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px #6ee7ff1c}
+.hint{font-size:12px;color:var(--muted);margin:8px 0 0}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.small-btn{background:#223250;color:#eaf1ff;border:1px solid #3a4e70;padding:9px 13px;border-radius:10px;font-weight:700;cursor:pointer}
+.small-btn:hover{background:#2b4166}
+.setting{margin-top:15px}
+.setting-head{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#dce6fa;margin-bottom:9px}
+input[type=range]{width:100%;accent-color:#69ddff;cursor:pointer}
+input[type=color]{width:42px;height:34px;padding:3px;border:1px solid 
+#3a4e70;border-radius:9px;background:#0a1223;cursor:pointer}
+.color-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.color-choice{background:#0c1528;border:1px solid #2b3b58;border-radius:12px;padding:9px;display:flex;align-items:center;gap:8px;color:#dce6fa;font-size:12px}
+.color-choice input{margin-left:auto}
+.stats{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin-top:10px}
+@media(max-width:800px){.app{grid-template-columns:1fr;max-width:600px}.wheel-panel{order:0}.side{order:1}.panel{padding:16px}.wheel-wrap{width:min(92vw,480px)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">✦ LUCKY SPIN</div>
+  <h1>Make your choice.</h1>
+  <p class="subtitle">Add your options, customize the wheel, and let fate decide.</p>
+</header>
+<main class="app">
+  <section class="panel 
+wheel-panel">
+    <div class="wheel-wrap">
+      <div class="pointer"></div>
+      <canvas id="wheel" width="900" height="900" aria-label="Spinning prize wheel"></canvas>
+    </div>
+    <button class="spin-btn" id="spin">SPIN THE WHEEL</button>
+    <div class="result" id="result" aria-live="polite">Ready when you are ✨</div>
+  </section>
+  <aside class="side">
+    <section class="panel">
+      <h2>✍️ Your options</h2>
+      <textarea id="items" spellcheck="false" aria-label="Wheel 
+options">Pizza
+Burger
+Sushi
+Tacos
+Pasta
+Surprise!</textarea>
+      <div class="stats"><span>One option per line</span><span id="count">6 options</span></div>
+      <div class="row" style="margin-top:12px">
+        <button class="small-btn" id="shuffle">Shuffle options</button>
+        <button class="small-btn" id="clear">Clear all</button>
+      </div>
+      <p class="hint">Add as many options as you like. Empty lines are 
+ignored.</p>
+    </section>
+    <section class="panel">
+      <h2>⚙️ Spin settings</h2>
+      <div class="setting">
+        <div class="setting-head"><label for="speed">Spin speed</label><strong id="speedValue">Normal</strong></div>
+        <input id="speed" type="range" min="1" max="10" value="5">
+        <div class="stats"><span>Slow & smooth</span><span>Fast & wild</span></div>
+      </div>
+      <div class="setting">
+        <div class="setting-head"><label for="duration">Spin duration</label><strong 
+id="durationValue">5 seconds</strong></div>
+        <input id="duration" type="range" min="2" max="12" value="5">
+      </div>
+    </section>
+    <section class="panel">
+      <h2>🎨 Wheel colors</h2>
+      <div class="color-grid">
+        <label class="color-choice">Color 1 <input type="color" class="palette" value="#635bff"></label>
+        <label class="color-choice">Color 2 <input type="color" class="palette" value="#00c2a8"></label>
+        <label class="color-choice">Color 3 <input 
+type="color" class="palette" value="#ffb547"></label>
+        <label class="color-choice">Color 4 <input type="color" class="palette" value="#ff5c8a"></label>
+        <label class="color-choice">Color 5 <input type="color" class="palette" value="#3288ff"></label>
+        <label class="color-choice">Color 6 <input type="color" class="palette" value="#a855f7"></label>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="small-btn" id="preset">Neon preset</button>
+        <button class="small-btn" 
+id="pastel">Pastel preset</button>
+      </div>
+    </section>
+  </aside>
+</main>
+<script>
+const canvas=document.getElementById('wheel'),ctx=canvas.getContext('2d');
+const itemsEl=document.getElementById('items'),spinBtn=document.getElementById('spin'),resultEl=document.getElementById('result');
+const speedEl=document.getElementById('speed'),durationEl=document.getElementById('duration');
+const 
+palettes=[...document.querySelectorAll('.palette')];
+let angle=0,spinning=false,raf=0;
+const cx=450,cy=450,r=420;
+const getItems=()=>itemsEl.value.split('\n').map(x=>x.trim()).filter(Boolean);
+const colors=()=>palettes.map(x=>x.value);
+function draw(){
+ const items=getItems(),n=items.length;ctx.clearRect(0,0,900,900);
+ ctx.save();ctx.translate(cx,cy);ctx.rotate(angle);
+ if(!n){ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fillStyle='#263650';ctx.fill()
+;ctx.fillStyle='#dbe7ff';ctx.font='bold 34px system-ui';ctx.textAlign='center';ctx.fillText('ADD YOUR OPTIONS',0,12);ctx.restore();return}
+ const arc=Math.PI*2/n,pal=colors();
+ for(let i=0;i<n;i++){
+  const start=-Math.PI/2+i*arc,end=start+arc;
+  ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,r,start,end);ctx.closePath();
+  ctx.fillStyle=pal[i%pal.length];ctx.fill();
+  ctx.strokeStyle='#ffffff55';ctx.lineWidth=5;ctx.stroke();
+  
+ctx.save();ctx.rotate(start+arc/2);ctx.textAlign='right';ctx.textBaseline='middle';
+  let fontSize=Math.max(13,Math.min(29,250/n+9));ctx.font=`800 ${fontSize}px system-ui`;
+  ctx.shadowColor='#0008';ctx.shadowBlur=4;ctx.fillStyle='#fff';
+  let label=items[i],maxWidth=r*.68;
+  while(ctx.measureText(label).width>maxWidth&&label.length>3)label=label.slice(0,-2)+'…';
+  ctx.fillText(label,r-35,0);ctx.restore();
+ }
+ 
+ctx.beginPath();ctx.arc(0,0,76,0,Math.PI*2);ctx.fillStyle='#101a30';ctx.fill();ctx.lineWidth=10;ctx.strokeStyle='#fff';ctx.stroke();
+ ctx.beginPath();ctx.arc(0,0,58,0,Math.PI*2);ctx.fillStyle='#eaf7ff';ctx.fill();
+ ctx.fillStyle='#18233a';ctx.font='900 25px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('SPIN',0,1);
+ ctx.restore();
+}
+function updateCount(){let n=getItems().length;document.getElementById('count').textContent=n+' option'+(n===1?'':'s');draw()}
+itemsEl.addEventListener('input',()=>{updateCount();if(!spinning)resultEl.textContent='Ready when you are ✨'});
+palettes.forEach(p=>p.addEventListener('input',draw));
+document.getElementById('shuffle').onclick=()=>{let a=getItems();for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}itemsEl.value=a.join('\n');updateCount()};
+document.getElementById('clear').onclick=()=>{if(spinning)return;itemsEl.value='';updateCount();resultEl.textContent='Add options to get started'};
+document.getElementById('preset').onclick=()=>{['#635bff','#00e0bd','#ffbd45','#ff4f91','#258bff','#a855f7'].forEach((v,i)=>palettes[i].value=v);draw()};
+document.getElementById('pastel').onclick=()=>{['#a5b4fc','#99f6e4','#fde68a','#fbcfe8','#bae6fd','#ddd6fe'].forEach((v,i)=>palettes[i].value=v);draw()};
+speedEl.oninput=()=>{document.getElementById('speedValue').textContent=['Very slow','Slow','Gentle','Relaxed','Normal','Quick','Fast','Very fast','Turbo','Insane'][+speedEl.value-1]};
+durationEl.oninput=()=>document.getElementById('durationValue').textContent=durationEl
+.value+' seconds';
+function easeOut(t){return 1-Math.pow(1-t,4)}
+function spin(){
+ const items=getItems();if(spinning)return;
+ if(items.length<2){resultEl.textContent=items.length?'Add at least 2 options to spin':'Add some options first';return}
+ spinning=true;spinBtn.disabled=true;resultEl.textContent='Good luck… 🍀';
+ const n=items.length,chosen=Math.floor(Math.random()*n),arc=Math.PI*2/n;
+ // Pointer is at the top (-90 degrees). Align the selected segment's 
+center there.
+ const desired=-(chosen+.5)*arc;
+ const current=((angle%(Math.PI*2))+Math.PI*2)%(Math.PI*2);
+ const targetMod=((desired%(Math.PI*2))+Math.PI*2)%(Math.PI*2);
+ let delta=(targetMod-current+Math.PI*2)%(Math.PI*2);
+ const turns=5+Math.round((+speedEl.value)*.8);
+ const total=turns*Math.PI*2+delta;
+ const duration=+durationEl.value*1000;
+ const start=performance.now(),startAngle=angle;
+ function frame(now){let 
+t=Math.min(1,(now-start)/duration);angle=startAngle+total*easeOut(t);draw();if(t<1){raf=requestAnimationFrame(frame)}else{
+  spinning=false;spinBtn.disabled=false;resultEl.textContent='🎉 '+items[chosen]+'!'; 
+ }}
+ raf=requestAnimationFrame(frame);
+}
+spinBtn.addEventListener('click',spin);
+draw();updateCount();
+</script>
+</body>
+  </html>
